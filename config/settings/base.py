@@ -4,6 +4,7 @@ Place settings that is used in every enviromnent here
 """
 
 from pathlib import Path
+from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
@@ -69,7 +70,15 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
 AUTH_USER_MODEL = 'users.User'
+
+
+SIMPLE_JWT = {
+    'USER_ID_FIELD': 'email',
+    'USER_ID_CLAIM': 'email',
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Wingz API",

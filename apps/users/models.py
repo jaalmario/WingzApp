@@ -17,6 +17,7 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("Email is required")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
+        print(password + " IN BASEMANAGER")
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -35,8 +36,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=40)
     last_name = models.CharField(max_length=40)
     email = models.EmailField(unique=True)
-    phone_number = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=11)
     is_deleted = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     objects = CustomUserManager()
 
