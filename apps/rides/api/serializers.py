@@ -20,6 +20,10 @@ class BaseRideSerializer(serializers.ModelSerializer):
         return attrs
     
 class DetailedRideSerializer(BaseRideSerializer):
-    id_rider = SimpleUserSerializer()
-    id_driver = SimpleUserSerializer()
+    rider = SimpleUserSerializer(source='id_rider')
+    driver = SimpleUserSerializer(source='id_driver')
+    todays_ride_events = BaseRideEventsSerializer(many=True, read_only=True)
+    class Meta(BaseRideSerializer.Meta):
+        exclude = None
+        fields =['id_ride', 'rider', 'driver', 'status', 'pickup_latitude', 'pickup_longitude', 'dropoff_latitude', 'dropoff_longitude', 'pickup_time', 'todays_ride_events']
     

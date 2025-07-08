@@ -5,6 +5,7 @@ from apps.rides.services import annotate_rides_with_distance
 from apps.rides.exceptions import CoordinatesNotFound
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from apps.ride_events.api.views import BaseRideEventsSerializer
+from apps.rides.selectors import get_rides_with_recent_events
 
 class RideViewset(BaseViewSet):
     queryset = Ride.objects.all()
@@ -23,7 +24,7 @@ class RideViewset(BaseViewSet):
         longitude = self.request.query_params.get('longitude')
         ordering = self.request.query_params.get('ordering')
         
-        qs = self.queryset
+        qs = get_rides_with_recent_events()
 
         if ordering == 'distance' or ordering == '-distance':
             if not (latitude and longitude):
