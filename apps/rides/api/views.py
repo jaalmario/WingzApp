@@ -17,7 +17,7 @@ class RideViewset(BaseViewSet):
     }
 
     def get_serializer_class(self):
-        return self.serializer_action_classes.get(self.action, BaseRideEventsSerializer )
+        return self.serializer_action_classes.get(self.action, BaseRideSerializer )
 
     def get_queryset(self):
         latitude = self.request.query_params.get('latitude')

@@ -8,3 +8,5 @@ django-filter
 dotenv
 
 django-debug-toolbar
+coverage
+factory_boy

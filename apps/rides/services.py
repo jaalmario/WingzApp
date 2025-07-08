@@ -2,6 +2,9 @@ from django.db.models import F, FloatField, ExpressionWrapper, Func, Value
 from math import radians
 
 def annotate_rides_with_distance(queryset, latitude, longitude):
+    """
+    Follow Haversine Formula to calculate distance between two GPS coordinates
+    """
     try:
         latitude = float(latitude)
         longitude = float(longitude)
@@ -12,22 +15,25 @@ def annotate_rides_with_distance(queryset, latitude, longitude):
         distance=ExpressionWrapper(
             6371 * Func(
                 Func(
+                    Func(
+                        Value(latitude), function='RADIANS'
+                    ) - Func(F('pickup_latitude'), function='RADIANS'),
+                    function='SIN'
+                ) ** 2
+                +
+                Func(
+                    Func(Value(longitude), function='RADIANS') - Func(F('pickup_longitude'), function='RADIANS'),
+                    function='SIN'
+                ) ** 2
+                * Func(
+                    Func(Value(latitude), function='RADIANS'),
+                    function='COS'
+                )
+                * Func(
                     Func(F('pickup_latitude'), function='RADIANS'),
                     function='COS'
-                ) * Func(
-                    Value(latitude),
-                    function='COS'
-                ) * Func(
-                    Func(F('pickup_longitude') - Value(longitude), function='RADIANS'),
-                    function='COS'
-                ) + Func(
-                    Func(F('pickup_latitude'), function='RADIANS'),
-                    function='SIN'
-                ) * Func(
-                    Value(latitude),
-                    function='SIN'
                 ),
-                function='ACOS'
+                function='SQRT'
             ),
             output_field=FloatField()
         )
