@@ -3,5 +3,8 @@ djangorestframework
 drf-spectacular
 psycopg2-binary
 djangorestframework-simplejwt
+django-filter
 
 dotenv
+
+django-debug-toolbar

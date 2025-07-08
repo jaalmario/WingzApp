@@ -22,8 +22,18 @@ class BaseUserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+    
+class SimpleUserSerializer(BaseUserSerializer):
+    class Meta(BaseUserSerializer.Meta):
+        exclude = None
+        fields = ['id_user', 'first_name', 'last_name', 'phone_number']
+
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Used for serialization of our jwt token
+    """
     username_field = 'email'
     @classmethod
     def get_token(cls, user):
