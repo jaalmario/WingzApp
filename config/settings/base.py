@@ -29,7 +29,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_spectacular',
     'apps.users',
-    'apps.rides'
+    'apps.rides',
+    'apps.ride_events'
 ]
 
 MIDDLEWARE = [
