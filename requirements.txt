@@ -1,5 +1,7 @@
 django
 djangorestframework
 drf-spectacular
+psycopg2-binary
+djangorestframework-simplejwt
 
 dotenv
