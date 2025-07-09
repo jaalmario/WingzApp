@@ -1,23 +1,31 @@
 import factory
 from factory.django import DjangoModelFactory
-from apps.users.models import User, UserRoles
+from apps.rides.models import Ride
+from django.utils import timezone
+from apps.users.tests.factories import RiderFactory, DriverFactory
 
-class RiderFactory(DjangoModelFactory):
+
+class RideFactory(DjangoModelFactory):
     class Meta:
-        model = User
+        model = Ride
 
-    email = factory.Sequence(lambda n: f"rider{n}@example.com")
-    password = factory.PostGenerationMethodCall('set_password', 'RiderPass123!')
-    first_name = factory.Faker('first_name')
-    last_name = factory.Faker('last_name')
-    role = UserRoles.RIDER
+    id_rider = factory.SubFactory(RiderFactory)
+    id_driver = factory.SubFactory(DriverFactory)
+    pickup_latitude = factory.Faker('latitude')
+    pickup_longitude = factory.Faker('longitude')
+    dropoff_latitude = factory.Faker('latitude')
+    dropoff_longitude = factory.Faker('longitude')
+    pickup_time = factory.LazyFunction(timezone.now)
+    status = 'pickup'
     is_deleted = False
-    
-class AdminFactory(RiderFactory):
-    role = UserRoles.ADMIN
-    
-class DriverFactory(RiderFactory):
-    role = UserRoles.DRIVER
 
-class DeletedUserFactory(RiderFactory):
-    is_deleted = True
+class FarRideFactory(RideFactory):
+    pickup_latitude = 20.0
+    pickup_longitude = 20.0
+    dropoff_latitude = factory.Faker('latitude')
+    dropoff_longitude = factory.Faker('longitude')
+class NearRideFactory(RideFactory):
+    pickup_latitude = 0.0
+    pickup_longitude = 0.0
+    dropoff_latitude = factory.Faker('latitude')
+    dropoff_longitude = factory.Faker('longitude')

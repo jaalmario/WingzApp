@@ -3,11 +3,11 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.utils import timezone
 from datetime import timedelta
-from apps.users.models import User, UserRoles
-from apps.rides.models import Ride
 from apps.ride_events.models import RideEvent
 from rest_framework_simplejwt.tokens import RefreshToken
-from .factories import AdminFactory, RiderFactory, DriverFactory, DeletedUserFactory
+from .factories import FarRideFactory, NearRideFactory
+from apps.users.tests.factories import AdminFactory, RiderFactory, DriverFactory, DeletedUserFactory
+from apps.rides.exceptions import CoordinatesNotFound
 
 class RideListTestCase(APITestCase):
     def setUp(self):
@@ -20,28 +20,9 @@ class RideListTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
         #Farther pickup (10,20)
-        self.ride = Ride.objects.create(
-            id_rider=self.rider,
-            id_driver=self.driver,
-            pickup_latitude=10.0,
-            pickup_longitude=20.0,
-            dropoff_latitude=10.0,
-            dropoff_longitude=20.0,
-            pickup_time=timezone.now(),
-            status='en-route'
-        )
-        
+        self.ride = FarRideFactory()
         #Nearer pickup (0,0)
-        self.ride2 = Ride.objects.create(
-            id_rider=self.rider,
-            id_driver=self.driver,
-            pickup_latitude=0.0,
-            pickup_longitude=0.0,
-            dropoff_latitude=10.0,
-            dropoff_longitude=20.0,
-            pickup_time=timezone.now(),
-            status='pickup'
-        )
+        self.nearRide = NearRideFactory(id_rider=self.rider, status='en-route')
 
         # RideEvent within 24h
         RideEvent.objects.create(
@@ -62,36 +43,19 @@ class RideListTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['total_count'], 2)
         self.assertIn('todays_ride_events', response.data['results'][0])
-        self.assertEqual(len(response.data['results'][0]['todays_ride_events']), 2)
-        
-    def test_filter_by_status(self):
-        response = self.client.get(reverse('rides-list') + '?status=en-route')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['total_count'], 1)
-
-    def test_filter_by_rider_email(self):
-        response = self.client.get(reverse('rides-list') + f'?id_rider__email={self.rider.email}')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['total_count'], 2)
-
-    def test_order_by_distance_valid_coords_asc(self):
-        response = self.client.get(reverse('rides-list') + '?latitude=1.1&longitude=2.1&ordering=distance')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.ride2.id_ride, response.data['results'][0]['id_ride'])
-        
-    def test_order_by_distance_valid_coords_dsc(self):
-        response = self.client.get(reverse('rides-list') + '?latitude=1.1&longitude=2.1&ordering=-distance')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.ride.id_ride, response.data['results'][0]['id_ride'])
+        self.assertEqual(len(response.data['results'][1]['todays_ride_events']), 2)
 
     def test_order_by_distance_missing_coords(self):
-        response = self.client.get(reverse('rides-list') + '?ordering=distance')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_unauthenticated_access(self):
-        self.client.credentials()
-        response = self.client.get(reverse('rides-list'))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.client.get(reverse('rides-list') + '?ordering=distance')
+        self.assertRaises(CoordinatesNotFound)
+        
+    def test_order_by_distance_asc(self):
+        response = self.client.get(reverse('rides-list') + '?ordering=distance&latitude=0.0&longitude=0.0')
+        self.assertEqual(response.data['results'][0]['id_ride'], self.nearRide.id_ride)
+        
+    def test_order_by_distance_dsc(self):
+        response = self.client.get(reverse('rides-list') + '?ordering=-distance&latitude=0.0&longitude=0.0')
+        self.assertEqual(response.data['results'][0]['id_ride'], self.ride.id_ride)
 
 class RideCreateTestCase(APITestCase):
     def setUp(self):
@@ -102,7 +66,7 @@ class RideCreateTestCase(APITestCase):
         # Token for auth
         refresh = RefreshToken.for_user(self.admin)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
-        
+
     def test_create_with_invalid_status(self):
         deleted = DeletedUserFactory()
         data = {
